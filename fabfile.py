@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+"""
+Fabfile for installing teamcity on a debian/ubuntu machine
+tested on natty and lenny using postgresql as database
+and by default runs with user teamcity @ /opt/teamcity
+"""
 
 from fabric.api import *
 from fabric.contrib.files import exists, upload_template
@@ -38,10 +43,15 @@ except ImportError:
     pass
 
 
+##########
+# targets
+# the following example is a vagrant target.
+# create your own targets under targets.py so you don't
+# have to modify the source
 
 @task
 def vagrant():
-    """run commands on a vagrant vm"""
+    """@target: vagrant -- run commands on a vagrant vm"""
     env.hosts = ['127.0.0.1:2222']
     env.result = local('vagrant ssh_config | grep IdentityFile', capture=True)
     env.key_filename = env.result.split()[1]
@@ -59,7 +69,7 @@ def provision():
     if distribution == 'Debian':
         # have to find out what version
         version = run('lsb_release -cs')
-        if version == 'lenny':
+        if version == 'lenny': # TODO: make this work for squeeze too
             sudo("echo 'deb http://ftp.debian.org/debian lenny main contrib non-free' > /etc/apt/sources.list.d/non-free.list")
     sudo('apt-get update')
     sudo('apt-get install -qq -y %s' % ' '.join(POST_PACKAGES))
@@ -99,9 +109,6 @@ def install_teamcity(user=DEFAULT_USER, location=DEFAULT_INSTALL_LOCATION):
             create_db()
 
     sudo("%s/TeamCity/bin/runAll.sh start" % location,  user=DEFAULT_USER)
-    sleep(10)
 
-    output = sudo('cat %s/TeamCity/logs/teamcity-server.log | grep token' % location)
-    return output
 
 
